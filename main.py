@@ -1,4 +1,4 @@
-from flask import Flask, request
+from flask import Flask
 from flask_socketio import SocketIO, emit
 
 app = Flask(__name__)
@@ -10,70 +10,50 @@ messages = {
     "robot_b": ""
 }
 
-# Mapa de SID (cliente) a rol ("a" o "b")
-client_roles = {}
-
 @app.route('/')
 def home():
     return "Servidor de comunicación entre robots activo 🚀"
 
 @socketio.on('connect')
 def handle_connect():
-    print(f"Cliente conectado: {request.sid}")
+    print("Cliente conectado")
 
 @socketio.on('disconnect')
 def handle_disconnect():
-    print(f"Cliente desconectado: {request.sid}")
-    client_roles.pop(request.sid, None)
-
-@socketio.on('register')
-def handle_register(data):
-    robot = data.get('robot')
-    if robot in ['a', 'b']:
-        client_roles[request.sid] = robot
-        print(f"Cliente {request.sid} registrado como robot {robot}")
-        emit("registered", {"status": "ok", "robot": robot})
-    else:
-        emit("registered", {"status": "error", "message": "Rol inválido"})
+    print("Cliente desconectado")
 
 @socketio.on('send_message')
 def handle_send(data):
-    sender_role = client_roles.get(request.sid)
-    if not sender_role:
-        emit("error", {"message": "Cliente no registrado"})
-        return
-
+    robot = data.get('robot')
     message = data.get('message')
-    if not message:
-        emit("error", {"message": "Mensaje vacío"})
+    if not robot or not message:
+        emit("error", {"message": "Datos incompletos"})
         return
 
-    # Enviar mensaje al otro robot
-    if sender_role == "a":
+    if robot == "a":
         messages["robot_b"] = message
         emit("receive_message", {"robot": "b", "message": message}, broadcast=True)
-    elif sender_role == "b":
+    elif robot == "b":
         messages["robot_a"] = message
         emit("receive_message", {"robot": "a", "message": message}, broadcast=True)
+    else:
+        emit("error", {"message": "Robot desconocido"})
 
 @socketio.on('request_message')
-def handle_request():
-    requester = client_roles.get(request.sid)
-    if not requester:
-        emit("error", {"message": "Cliente no registrado"})
-        return
-
-    if requester == "a":
+def handle_request(data):
+    robot = data.get('robot')
+    if robot == "a":
         msg = messages["robot_a"]
         messages["robot_a"] = ""
         emit("receive_message", {"robot": "a", "message": msg})
-    elif requester == "b":
+    elif robot == "b":
         msg = messages["robot_b"]
         messages["robot_b"] = ""
         emit("receive_message", {"robot": "b", "message": msg})
+    else:
+        emit("error", {"message": "Robot desconocido"})
 
 if __name__ == "__main__":
     import eventlet
     eventlet.monkey_patch()
     socketio.run(app, host="0.0.0.0", port=10000)
-
