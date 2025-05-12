@@ -1,47 +1,76 @@
-from flask import Flask, render_template
-from flask_socketio import SocketIO, send, emit
+from flask import Flask, request
+from flask_socketio import SocketIO, emit
 
 app = Flask(__name__)
-socketio = SocketIO(app)
+socketio = SocketIO(app, cors_allowed_origins="*")
 
-# Mensajes en memoria para la demo
+# Almacén de mensajes
 messages = {
     "robot_a": "",
     "robot_b": ""
 }
 
+# Mapa de SID (cliente) a rol ("a" o "b")
+client_roles = {}
+
 @app.route('/')
 def home():
     return "Servidor de comunicación entre robots activo 🚀"
 
-# Evento de conexión de WebSocket
 @socketio.on('connect')
 def handle_connect():
-    print("Cliente conectado")
+    print(f"Cliente conectado: {request.sid}")
 
-# Evento para enviar mensaje de Robot A o B
+@socketio.on('disconnect')
+def handle_disconnect():
+    print(f"Cliente desconectado: {request.sid}")
+    client_roles.pop(request.sid, None)
+
+@socketio.on('register')
+def handle_register(data):
+    robot = data.get('robot')
+    if robot in ['a', 'b']:
+        client_roles[request.sid] = robot
+        print(f"Cliente {request.sid} registrado como robot {robot}")
+        emit("registered", {"status": "ok", "robot": robot})
+    else:
+        emit("registered", {"status": "error", "message": "Rol inválido"})
+
 @socketio.on('send_message')
-def handle_message(data):
-    robot = data['robot']
-    message = data['message']
-    
-    if robot == "a":
+def handle_send(data):
+    sender_role = client_roles.get(request.sid)
+    if not sender_role:
+        emit("error", {"message": "Cliente no registrado"})
+        return
+
+    message = data.get('message')
+    if not message:
+        emit("error", {"message": "Mensaje vacío"})
+        return
+
+    # Enviar mensaje al otro robot
+    if sender_role == "a":
         messages["robot_b"] = message
         emit("receive_message", {"robot": "b", "message": message}, broadcast=True)
-    elif robot == "b":
+    elif sender_role == "b":
         messages["robot_a"] = message
         emit("receive_message", {"robot": "a", "message": message}, broadcast=True)
 
-# Evento para recibir mensaje
 @socketio.on('request_message')
-def handle_request(data):
-    robot = data['robot']
-    if robot == "a":
-        emit("receive_message", {"robot": "a", "message": messages["robot_a"]})
-        messages["robot_a"] = ""  # Borra el mensaje después de enviarlo
-    elif robot == "b":
-        emit("receive_message", {"robot": "b", "message": messages["robot_b"]})
-        messages["robot_b"] = ""  # Borra el mensaje después de enviarlo
+def handle_request():
+    requester = client_roles.get(request.sid)
+    if not requester:
+        emit("error", {"message": "Cliente no registrado"})
+        return
+
+    if requester == "a":
+        msg = messages["robot_a"]
+        messages["robot_a"] = ""
+        emit("receive_message", {"robot": "a", "message": msg})
+    elif requester == "b":
+        msg = messages["robot_b"]
+        messages["robot_b"] = ""
+        emit("receive_message", {"robot": "b", "message": msg})
 
 if __name__ == "__main__":
     socketio.run(app, host="0.0.0.0", port=10000)
