@@ -7,8 +7,8 @@ socketio = SocketIO(app, cors_allowed_origins="*", logger=True, engineio_logger=
 
 # Almacén de mensajes
 messages = {
-    "robot_a": "",
-    "robot_b": ""
+    "robot_lola": "",
+    "robot_lolo": ""
 }
 
 @app.route('/')
@@ -31,26 +31,26 @@ def handle_send(data):
         emit("error", {"message": "Datos incompletos"})
         return
 
-    if robot == "a":
-        messages["robot_b"] = message
-        emit("receive_message", {"robot": "b", "message": message}, broadcast=True)
-    elif robot == "b":
-        messages["robot_a"] = message
-        emit("receive_message", {"robot": "a", "message": message}, broadcast=True)
+    if robot == "lola":
+        messages["robot_lolo"] = message
+        emit("receive_message", {"robot": "lolo", "message": message}, broadcast=True)
+    elif robot == "lolo":
+        messages["robot_lola"] = message
+        emit("receive_message", {"robot": "lola", "message": message}, broadcast=True)
     else:
         emit("error", {"message": "Robot desconocido"})
 
 @socketio.on('request_message')
 def handle_request(data):
     robot = data.get('robot')
-    if robot == "a":
-        msg = messages["robot_a"]
-        messages["robot_a"] = ""
-        emit("receive_message", {"robot": "a", "message": msg})
-    elif robot == "b":
-        msg = messages["robot_b"]
-        messages["robot_b"] = ""
-        emit("receive_message", {"robot": "b", "message": msg})
+    if robot == "lola":
+        msg = messages["robot_lola"]
+        messages["robot_lola"] = ""
+        emit("receive_message", {"robot": "lola", "message": msg})
+    elif robot == "lolo":
+        msg = messages["robot_lolo"]
+        messages["robot_lolo"] = ""
+        emit("receive_message", {"robot": "lolo", "message": msg})
     else:
         emit("error", {"message": "Robot desconocido"})
 
