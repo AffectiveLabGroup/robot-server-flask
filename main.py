@@ -8,7 +8,8 @@ socketio = SocketIO(app, cors_allowed_origins="*", logger=True, engineio_logger=
 # Almacén de mensajes
 messages = {
     "robot_lola": "",
-    "robot_lolo": ""
+    "robot_lolo": "",
+    "humano": ""
 }
 
 @app.route('/')
@@ -37,6 +38,9 @@ def handle_send(data):
     elif robot == "lolo":
         messages["robot_lola"] = message
         emit("receive_message", {"robot": "lola", "message": message}, broadcast=True)
+    elif robot == "humano":
+        messages["humano"] = message
+        emit("receive_message", {"robot": "humano", "message": message}, broadcast=True)
     else:
         emit("error", {"message": "Robot desconocido"})
 
@@ -51,6 +55,10 @@ def handle_request(data):
         msg = messages["robot_lolo"]
         messages["robot_lolo"] = ""
         emit("receive_message", {"robot": "lolo", "message": msg})
+    elif robot == "humano":
+        msg = messages["humano"]
+        messages["humano"] = ""
+        emit("receive_message", {"robot": "humano", "message": msg})
     else:
         emit("error", {"message": "Robot desconocido"})
 
