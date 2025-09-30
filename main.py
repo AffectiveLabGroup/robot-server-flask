@@ -1,8 +1,17 @@
 from flask import Flask
 from flask_socketio import SocketIO, emit
-from flask import requests
+import requests
+import dns.resolver
+import eventlet
 
 app = Flask(__name__)
+
+# Forzar DNS externos (Google + Cloudflare)
+resolver = dns.resolver.Resolver()
+resolver.nameservers = ['8.8.8.8', '1.1.1.1']
+ 
+eventlet.monkey_patch(dns=False)
+
 socketio = SocketIO(app, cors_allowed_origins="*", logger=True, engineio_logger=True)
 
 url_rae = "https://rae-api.com/api/words/"
