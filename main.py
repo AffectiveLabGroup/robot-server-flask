@@ -10,7 +10,7 @@ app = Flask(__name__)
 resolver = dns.resolver.Resolver()
 resolver.nameservers = ['8.8.8.8', '1.1.1.1']
  
-eventlet.monkey_patch(dns=False)
+eventlet.monkey_patch()
 
 socketio = SocketIO(app, cors_allowed_origins="*", logger=True, engineio_logger=True)
 
