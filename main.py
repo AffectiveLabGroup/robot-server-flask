@@ -80,11 +80,11 @@ def handle_request_word(data):
         response = requests.get(url_rae + palabra)
         if response.status_code == 200:
             # si la respuesta es válida
-            emit('response_word', {'success': True}, room=request.sid)
+            emit('response_word', {'success': True})
         else:
-            emit('response_word', {'success': False}, room=request.sid)
+            emit('response_word', {'success': False})
     except Exception as e:
-        emit('response_word', {'success': False, 'error': str(e)}, room=request.sid)
+        emit('response_word', {'success': False, 'error': str(e)})
 
 
 if __name__ == "__main__":
