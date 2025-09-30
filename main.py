@@ -1,9 +1,11 @@
 from flask import Flask
 from flask_socketio import SocketIO, emit
+import requests
 
 app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins="*", logger=True, engineio_logger=True)
 
+url_rae = "https://rae-api.com/api/words/"
 
 # Almacén de mensajes
 messages = {
@@ -61,6 +63,20 @@ def handle_request(data):
         emit("receive_message", {"robot": "humano", "message": msg})
     else:
         emit("error", {"message": "Robot desconocido"})
+
+@socketio.on('request_word')
+def handle_request_word(data):
+    palabra = data.get('palabra')
+    try:
+        response = requests.get(url_rae + palabra)
+        if response.status_code == 200:
+            # si la respuesta es válida
+            emit('response_word', {'success': True}, room=request.sid)
+        else:
+            emit('response_word', {'success': False}, room=request.sid)
+    except Exception as e:
+        emit('response_word', {'success': False, 'error': str(e)}, room=request.sid)
+
 
 if __name__ == "__main__":
     import eventlet
