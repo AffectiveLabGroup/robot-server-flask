@@ -4,9 +4,10 @@ import requests
 
 app = Flask(__name__)
 
+# Forzar DNS externos (Google + Cloudflare)
+
  
-#socketio = SocketIO(app, cors_allowed_origins="*", logger=True, engineio_logger=True)
-socketio = SocketIO(app, cors_allowed_origins="*", async_mode="threading")
+socketio = SocketIO(app, cors_allowed_origins="*", logger=True, engineio_logger=True)
 
 url_rae = "https://rae-api.com/api/words/"
 
@@ -82,6 +83,6 @@ def handle_request_word(data):
 
 
 if __name__ == "__main__":
-    #import eventlet
-    #eventlet.monkey_patch()
+    import eventlet
+    eventlet.monkey_patch()
     socketio.run(app, host="0.0.0.0", port=10000)
